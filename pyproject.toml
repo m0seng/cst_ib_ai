@@ -1,0 +1,22 @@
+[project]
+name = "cst-ib-ai"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Moses Ng", email = "ngsunghim@hotmail.com" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "mypy>=1.15.0",
+    "ruff>=0.11.9",
+]
+
+[project.scripts]
+cst-ib-ai = "cst_ib_ai:main"
+abprune = "abprune:main"
+idk = "idk:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
