@@ -9,9 +9,10 @@ def backtrack[V, T](
         forced_attempts: dict[V, T] | None = None
 ):
     depth = len(csp.assignments)
-    # inprint(depth=depth, text=str(csp.assignments))
-    # inprint(depth=depth, text=str(csp.domains))
-    # print()
+    if depth == 0:
+        inprint(depth=depth, text=csp.str_of_assignments())
+        inprint(depth=depth, text=csp.str_of_domains())
+        print()
 
     if len(csp.assignments) == len(csp.variables):
         return csp.assignments
@@ -31,8 +32,8 @@ def backtrack[V, T](
     for t in value_order:
         child_csp = CSP.copy_of(csp)
         is_consistent = child_csp.add_assignment(next_var, t)
-        inprint(depth=depth, text=str(child_csp.assignments))
-        inprint(depth=depth, text=str(child_csp.domains))
+        inprint(depth=depth+1, text=child_csp.str_of_assignments())
+        inprint(depth=depth+1, text=child_csp.str_of_domains())
         print()
         if not is_consistent:
             continue

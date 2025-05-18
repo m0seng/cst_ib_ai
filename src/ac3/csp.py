@@ -11,6 +11,14 @@ class CSP[V, T]:
     assignments: dict[V, T]
 
 
+    def str_of_domains(self):
+        return " ".join(f"{v}({"".join(ts)})" for v, ts in self.domains.items())
+
+
+    def str_of_assignments(self):
+        return " ".join(f"{v}={t}" for v, t in self.assignments.items())
+
+
     def sanity_check(self) -> bool:
         # only to be applied on an initial CSP, not children in backtracking
 
