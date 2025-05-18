@@ -1,13 +1,19 @@
 from .csp import CSP
-
-def inprint(depth: int, text: str):
-    print(f"{".   " * depth}{text}")
+from .utils import inprint
 
 def backtrack[V, T](
         csp: CSP[V, T],
         forced_order: list[V] | None = None,
         forced_attempts: dict[V, T] | None = None
-):
+) -> dict[V, T] | None:
+    """
+    Backtracking algorithm for solving a CSP.
+
+    Specify `forced_order` and `forced_attempts` to guide the
+    order of variable assignment and values to try respectively.
+
+    Returns a set of satisfying assignments, or `None` if none exists.
+    """
     depth = len(csp.assignments)
     if depth == 0:
         inprint(depth=depth, text=csp.str_of_assignments())
@@ -38,7 +44,7 @@ def backtrack[V, T](
         if not is_consistent:
             continue
 
-        solution: dict[V, T] = backtrack(child_csp, forced_order, forced_attempts)
+        solution: dict[V, T] | None = backtrack(child_csp, forced_order, forced_attempts)
         if solution is not None:
             return solution
     

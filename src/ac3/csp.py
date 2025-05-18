@@ -1,10 +1,16 @@
-from typing import Any, Self
+from typing import Self
 from dataclasses import dataclass
 from collections import deque
 
 
 @dataclass
 class CSP[V, T]:
+    """
+    Represents a constraint satisfaction problem, including variable assignments.
+
+    This is mutable; a backtracking algorithm should make child copies with copy_of().
+    """
+
     variables: set[V]
     domains: dict[V, set[T]]
     constraints: dict[tuple[V, V], set[tuple[T, T]]]
@@ -12,15 +18,21 @@ class CSP[V, T]:
 
 
     def str_of_domains(self):
+        """Returns compact string representation of domains."""
         return " ".join(f"{v}({"".join(ts)})" for v, ts in self.domains.items())
 
 
     def str_of_assignments(self):
+        """Returns compact string representation of assignments."""
         return " ".join(f"{v}={t}" for v, t in self.assignments.items())
 
 
     def sanity_check(self) -> bool:
-        # only to be applied on an initial CSP, not children in backtracking
+        """
+        Checks a CSP without any assignments for correct initialisation
+        of variables, domains and constraints.
+        """
+        assert not self.assignments
 
         if self.variables.symmetric_difference(self.domains):
             return False
@@ -37,8 +49,11 @@ class CSP[V, T]:
 
     @classmethod
     def copy_of(cls, other: Self):
+        """
+        Returns a copy of a CSP; to be used in backtracking algorithms.
+        """
         # make sure to make copies of the sets within domains!
-        # TODO: also need to deep copy constraints or not?
+        # TODO: do we also need to deep copy constraints or not?
         # doesn't seem like we ever change them...
         return cls(
             variables=other.variables,
@@ -48,18 +63,23 @@ class CSP[V, T]:
         )
     
 
-    def get_neighbours(self, i: V) -> set[V]:
+    def get_neighbours(self, variable: V) -> set[V]:
+        """Gets the constraint neighbours of a variable."""
         neighbours: set[V] = set()
         for (a, b) in self.constraints:
-            if i == a:
+            if variable == a:
                 neighbours.add(b)
-            if i == b:
+            if variable == b:
                 neighbours.add(a)
         return neighbours
     
 
     def get_constraints(self, i: V, j: V) -> set[tuple[T, T]] | None:
-        # checks both tuple orders; read-only!
+        """
+        Gets (a copy of) the allowable set of values in the constraint
+        between a directed variable pair, if one exists.
+        """
+        # check both tuple orders!
         if (i, j) in self.constraints:
             return self.constraints[(i, j)]
         elif (j, i) in self.constraints:
@@ -68,14 +88,18 @@ class CSP[V, T]:
             return None
 
 
-    # assumes that forward checking of some form is in place
     def get_remaining_value_counts(self) -> dict[V, int]:
+        """Gets the number of remaining possible assignments for all variables."""
+        # assumes that forward checking of some form is in place
         return {v: len(dom) for v, dom in self.domains.items()}
     
 
-    # the degree of a variable is how many constraints
-    # it is involved in with unassigned variables
     def get_degrees(self) -> dict[V, int]:
+        """
+        Gets the degrees of all variables.
+
+        The degree of a variable is how many constraints it is involved in with unassigned variables.
+        """
         degrees: dict[V, int] = {v: 0 for v in self.variables}
         for (v_1, v_2) in self.constraints:
             if v_1 not in self.assignments:
@@ -86,8 +110,12 @@ class CSP[V, T]:
     
 
     def get_next_variable(self) -> V:
-        # use minimum remaining values heuristic first
-        # then degree as a tiebreaker
+        """
+        Heuristic for next variable to try in a backtracking search.
+
+        Applies the minimum remaining values heuristic first,
+        then uses degree as a tiebreaker.
+        """
         candidates: set[V] = set(v for v in self.variables if v not in self.assignments)
         
         rvcs = self.get_remaining_value_counts()
@@ -105,27 +133,40 @@ class CSP[V, T]:
     
 
     def get_option_count_per_assignment(self, variable: V) -> dict[T, int]:
+        """
+        Gets the total number of options for neighbours
+        allowed by each possible assignment to a variable.
+        """
+        # checks for neighbours' domains might not be strictly necessary for LCV?
         counts: dict[T, int] = {t: 0 for t in self.domains[variable]}
         for (v_l, v_r), cs in self.constraints.items():
             if variable == v_l:
                 for (t_l, t_r) in cs:
-                    if t_l in counts:
+                    if t_l in counts and t_r in self.domains[v_r]:
                         counts[t_l] += 1
             elif variable == v_r:
                 for (t_l, t_r) in cs:
-                    if t_r in counts:
+                    if t_r in counts and t_l in self.domains[v_l]:
                         counts[t_r] += 1
         return counts
     
 
     def get_value_order(self, variable: V):
-        # least constraining value heuristic
+        """
+        Heuristic for the order in which values for a variable should be tried.
+
+        Uses the least constraining value heuristic.
+        """
         option_counts: dict[T, int] = self.get_option_count_per_assignment(variable)
         return sorted(option_counts, key=lambda t: option_counts[t], reverse=True)
     
 
     def add_assignment(self, variable: V, value: T) -> bool:
-        # return value indicates whether CSP is still consistent
+        """
+        Adds an assignment to a CSP, running the AC-3 algorithm for constraint propagation.
+
+        Return value indicates whether the CSP is still consistent.
+        """
         assert variable in self.variables
         assert variable not in self.assignments
         assert value in self.domains[variable]
@@ -135,22 +176,12 @@ class CSP[V, T]:
         return self.ac_3()
     
 
-    # def with_assignment(self, variable: V, value: T) -> Self:
-    #     new_csp = type(self).copy_of(self)
-    #     new_csp.add_assignment(variable, value)
-    #     return new_csp
-    
-
-    # def with_assignments(self, assignments: list[tuple[V, T]]) -> Self:
-    #     result = self
-    #     for variable, value in assignments:
-    #         result = result.with_assignment(variable, value)
-    #         print(result.domains)
-    #     return result
-    
-
     def ac_3(self) -> bool:
-        # return value indicates whether CSP is still consistent
+        """
+        AC-3 algorithm for constraint propagation in a CSP.
+
+        Return value indicates whether the CSP is still consistent.
+        """
         to_check: deque[tuple[V, V]] = deque()
 
         # add arcs in both directions
@@ -170,7 +201,11 @@ class CSP[V, T]:
                 
 
     def remove_inconsistencies(self, i: V, j: V) -> bool:
-        # return value denotes whether any domain elements of i were removed
+        """
+        Removes inconsistent domain elements from the origin of a directed constraint.
+
+        Return value denotes whether any domain elements were removed.
+        """
         result = False
         constraint_ij = self.get_constraints(i, j)
         assert constraint_ij is not None  # lmao

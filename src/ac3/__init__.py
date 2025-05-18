@@ -4,7 +4,9 @@ from .backtrack import backtrack
 
 type Colour = Literal["R", "C", "B"]
 
-def main():
+def main() -> None:
+    # Example problem from CST IB AI exercise sheet
+
     colour_pairs: set[tuple[Colour, Colour]] = set((
         ("R", "C"),
         ("R", "B"),
@@ -25,16 +27,8 @@ def main():
     ))
 
     variables: set[int] = set((1, 2, 3, 4, 5, 6, 7, 8))
-    domains = {v: set(("R", "C", "B")) for v in variables}
+    domains: dict[int, set[Colour]] = {v: set(("R", "C", "B")) for v in variables}
     constraints = {(i, j): colour_pairs for (i, j) in edges}
-
-    # pre_assignments: list[tuple[int, Colour]] = (
-    #     (1, "R"),
-    #     (4, "C"),
-    #     (5, "R"),
-    #     (8, "C"),
-    #     (6, "B")
-    # )
 
     forced_order: list[int] = [1, 4, 5, 8, 6]
     forced_attempts: dict[int, Colour] = {
@@ -52,5 +46,4 @@ def main():
         assignments={}
     )
 
-    # backtrack(csp)
     backtrack(csp, forced_order, forced_attempts)
