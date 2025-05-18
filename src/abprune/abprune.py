@@ -59,7 +59,7 @@ def alphabeta(alpha: float, beta: float, node: Node, depth: int, is_max: bool):
                     depth,
                     f"{pname(is_max)}: could force {pnum(value)}? {pname(not is_max)} says {pnum(beta)}; PRUNE",
                 )
-                return value
+                return value  # value still returned, potentially allowing bigger prunes above!
             alpha = max(alpha, value)  # feed value back into rest of search
             inprint(depth, f"{pname(is_max)}: [{pnum(alpha)}, {pnum(beta)}]")
 
@@ -78,7 +78,7 @@ def alphabeta(alpha: float, beta: float, node: Node, depth: int, is_max: bool):
                     depth,
                     f"{pname(is_max)}: could force {pnum(value)}? {pname(not is_max)} says {pnum(alpha)}; PRUNE",
                 )
-                return value
+                return value  # value still returned, potentially allowing bigger prunes above!
             beta = min(beta, value)  # feed value back into rest of search
             inprint(depth, f"{pname(is_max)}: [{pnum(alpha)}, {pnum(beta)}]")
 

@@ -15,7 +15,7 @@ dependencies = [
 [project.scripts]
 cst-ib-ai = "cst_ib_ai:main"
 abprune = "abprune:main"
-idk = "idk:main"
+ac3 = "ac3:main"
 
 [build-system]
 requires = ["hatchling"]
